@@ -37,7 +37,7 @@ def get_teams():
 def get_team_info(team_id: str):
     count = 0
     mycol = app.database['pbp-nba']
-    myQuery = {"$or":[{"HomeTeam":"LIZ"},{"AwayTeam":"LIZ"}], "Quarter": 4, "SecLeft": 0, "AwayPlay":"End of Game"}
+    myQuery = {"$or":[{"HomeTeam":team_id},{"AwayTeam":team_id}], "Quarter": 4, "SecLeft": 0, "AwayPlay":"End of Game"}
     results = mycol.find(myQuery)
     print(results)
     nba_data = [NBAData(**doc).model_dump() for doc in results]
