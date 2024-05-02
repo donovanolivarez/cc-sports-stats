@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 from pydantic import BaseModel, Field
+from pydantic_mongo import PydanticObjectId
 from datetime import datetime
 from bson import ObjectId
 
@@ -20,22 +21,22 @@ class PyObjectId(ObjectId):
 
 
 class NBAData(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    URL: Optional[str]
-    GameType: Optional[str]
-    Location: Optional[str]
-    Date: Optional[datetime]
-    Time: Optional[str]
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    URL: Optional[str] = None
+    GameType: Optional[str] = None
+    Location: Optional[str] = None
+    Date: Optional[datetime] = None
+    Time: Optional[str] = None
     WinningTeam: str
-    Quarter: Optional[int]
-    SecLeft: Optional[int]
+    Quarter: Optional[int] = None
+    SecLeft: Optional[int] = None
     AwayTeam: str
-    AwayPlay: Optional[str]
-    AwayScore: Optional[int]
+    AwayPlay: Optional[str] = None
+    AwayScore: Optional[int] = None
     HomeTeam: str
-    HomePlay: Optional[str]
+    HomePlay: Optional[str] = None
     HomeScore: Optional[int]
-    Shooter: Optional[str]
-    ShotType: Optional[str]
-    ShotOutcome: Optional[str]
-    ShotDist: Optional[int]
+    Shooter: Optional[str] = None
+    ShotType: Optional[str] = None
+    ShotOutcome: Optional[str] = None
+    ShotDist: Optional[int] = None
