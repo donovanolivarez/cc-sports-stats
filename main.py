@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+from typing import List
 
-from typing import Union
+from models import NBAData
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 
 app = FastAPI()
-
 
 @app.get("/")
 def read_root():
@@ -14,29 +15,47 @@ def read_root():
     print(client)
     return {"Hello": "World"}
 
+@app.get("/teams", response_description="List all NBA teams", response_model=List[NBAData])
+def get_teams():
+    mycol = get_database()
+    teams = list(mycol.find().distinct("HomeTeam"))
+    return teams
 
-@app.get("/sports-data/stats/nba/teams")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+@app.get("/teams/{team_id}", response_description="List all the games of the given team")
+def get_team_info(team_id: str):
+    count = 0
+    mycol = get_database()
+    myQuery = {"WinningTeam": team_id, "Quarter": 4, "SecLeft": 0, "AwayPlay":"End of Game"}
+    results = mycol.find(myQuery)
+    for doc1 in results:
+        count = count + 1
+        print(doc1)
 
-@app.get("/sports-data/stats/nba/teams/{team_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"team_id": item_id, "q": q}
+    myString = "The total number of games won by " + team_id + " was " + str(count)
+    return myString
 
-@app.get("/sports-data/stats/nba/teams/{team_id}/wins)
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+
+@app.post("/teams/{team_id}/gameInfo", response_description="Create a new entry for game data")
+async def create_gameInfo(gameInfo: NBAData):
+    return gameInfo
+
+@app.delete("/{id}", response_description="Remove a given set of game data by ID")
+async def remove_gameInfo_byId(id: str):
+    mycol = get_database()
+    return mycol.delete_one(id)
 
 
 def get_database(): 
    # Provide the mongodb atlas url to connect python to mongodb using pymongo
-   CONNECTION_STRING = "mongodb+srv://heyubaidullah:LroLDx3UdCyQO5fA@cc-sports-stat-cluster.ruyzwup.mongodb.net/?retryWrites=true&w=majority&appName=cc-sports-stat-cluster"
- 
+   #CONNECTION_STRING = "mongodb+srv://heyubaidullah:LroLDx3UdCyQO5fA@cc-sports-stat-cluster.ruyzwup.mongodb.net/?retryWrites=true&w=majority&appName=cc-sports-stat-cluster"
+   CONNECTION_STRING = "mongodb+srv://ep1085:HXExdlceJdiMIcem@cluster0.s1reytw.mongodb.net/"
    # Create a connection using MongoClient. You can import MongoClient or use pymongo.MongoClient
    client = MongoClient(CONNECTION_STRING)
+   db = client['cc-sports-stats-nba']
+   table = db['2019-2020']
  
    # Create the database for our example (we will use the same database throughout the tutorial
-   return client['user_shopping_list']
+   return table
 
 """
 # Create a new client and connect to the server
