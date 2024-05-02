@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from datetime import datetime
 from typing import List
 
 from bson import ObjectId
@@ -38,12 +37,12 @@ def get_teams():
 def get_team_info(team_id: str):
     count = 0
     mycol = app.database['pbp-nba']
-    myQuery = {"WinningTeam": team_id, "Quarter": 4, "SecLeft": 0, "AwayPlay":"End of Game"}
+    myQuery = {"$or":[{"HomeTeam":"LIZ"},{"AwayTeam":"LIZ"}], "Quarter": 4, "SecLeft": 0, "AwayPlay":"End of Game"}
     results = mycol.find(myQuery)
     print(results)
     nba_data = [NBAData(**doc).model_dump() for doc in results]
 
-    myString = "The total number of games won by " + team_id + " was " + str(count)
+    print("The total number of games won by " + team_id + " was " + str(count))
     return nba_data
 
 
@@ -62,6 +61,6 @@ async def remove_gameInfo_byId(record_id: str):
 
 @app.delete("/teams/{team_id}", response_description="Remove a given set of game data by Team ID")
 async def remove_gameInfo_byId(team_id: str):
-    myQuery = {"$or":[{"HomeTeam":"LIZ"},{"AwayTeam":"LIZ"}]}
+    myQuery = {"$or":[{"HomeTeam":team_id},{"AwayTeam":team_id}]}
     app.database['pbp-nba'].delete_many(myQuery)
     return "Successfully deleted all records for team: " + team_id
