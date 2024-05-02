@@ -2,10 +2,10 @@
 from datetime import datetime
 from typing import List
 
-from models import NBAData
-from fastapi import FastAPI, Body
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from bson import ObjectId
+
+from models import NBAData, NBADataUpdate
+from fastapi import FastAPI
 from pymongo import MongoClient
 
 app = FastAPI()
@@ -16,7 +16,6 @@ def startup_db_client():
     CONNECTION_STRING = "mongodb+srv://heyubaidullah:LroLDx3UdCyQO5fA@cc-sports-stat-cluster.ruyzwup.mongodb.net/?retryWrites=true&w=majority&appName=cc-sports-stat-cluster"
     app.mongodb_client = MongoClient(CONNECTION_STRING)
     app.database = app.mongodb_client['sports-stats']
-    app.database['pbp-nba']
 
 
 @app.on_event("shutdown")
@@ -29,11 +28,12 @@ def read_root():
     print(app.database['pbp-nba'])
     return "Welcome to the Sports Statistics app!"
 
+
 @app.get("/teams", response_description="List all NBA teams", response_model=List[str])
 def get_teams():
     teams = list(app.database['pbp-nba'].find().distinct("HomeTeam"))
-
     return teams
+
 
 @app.get("/teams/{team_id}", response_description="List all the games of the given team", response_model=str)
 def get_team_info(team_id: str):
@@ -49,35 +49,14 @@ def get_team_info(team_id: str):
     return myString
 
 
-# @app.post("/teams/{team_id}/gameInfo", response_description="Create a new entry for game data")
-# async def create_gameInfo(post: postingModel.Posting = Body(...)):
-#     post = jsonable_encoder(post)
-#     app.database['pbp-nba'].insert_one(nbadata_helper(post))
-#     return "Game info for " + post.WinningTeam + " was inserted."
-
 @app.post("/teams/{team_id}/gameInfo", response_description="Create a new entry for game data")
-async def create_gameInfo(gameInfo: NBAData):
-    print(gameInfo)
-    json_compatible_item_data = jsonable_encoder(NBAData)
-    app.database['pbp-nba'].insert_one(gameInfo.model_dump())
-    return "Game info for " + gameInfo.WinningTeam + " was inserted."
+async def create_gameInfo(gameInfo: NBADataUpdate):
+    app.database['pbp-nba'].insert_one(gameInfo.model_dump(by_alias=True, exclude=["id"]))
+    return gameInfo
 
 
-@app.delete("/{id}", response_description="Remove a given set of game data by ID")
-async def remove_gameInfo_byId(id: str):
-    return app.database['pbp-nba'].delete_one(id)
-
-
-def nbadata_helper(nbadata) -> dict:
-    return {
-        "GameType": str(NBAData["GameType"]),
-        "Location": str(NBAData["Location"]),
-        "Quarter": int(NBAData["Quarter"]),
-        "SecLeft": int(NBAData["SecLeft"]),
-        "Date": datetime(NBAData["Date"]),
-        "WinningTeam": str(NBAData["WinningTeam"]),
-        "HomeTeam": str(NBAData["HomeTeam"]),
-        "HomeScore": int(NBAData["HomeScore"]),
-        "AwayTeam": str(NBAData["AwayTeam"]),
-        "AwayScore": int(NBAData["AwayScore"])
-    }
+@app.delete("/{record_id}", response_description="Remove a given set of game data by ID")
+async def remove_gameInfo_byId(record_id: str):
+    mongo_id = ObjectId(record_id)
+    app.database['pbp-nba'].delete_one({"_id": mongo_id})
+    return "Successfully deleted record with ID: " + record_id
