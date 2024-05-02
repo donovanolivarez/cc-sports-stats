@@ -3,10 +3,12 @@ from typing import Optional
 
 import pydantic
 from pydantic import BaseModel, Field
+from pydantic_mongo import PydanticObjectId
 from datetime import datetime
 from bson import ObjectId
 
 
+# this is prob not needed
 class PyObjectId(ObjectId):
     """ Custom Type for reading MongoDB IDs """
 
