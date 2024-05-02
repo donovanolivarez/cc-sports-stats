@@ -60,3 +60,10 @@ async def remove_gameInfo_byId(record_id: str):
     mongo_id = ObjectId(record_id)
     app.database['pbp-nba'].delete_one({"_id": mongo_id})
     return "Successfully deleted record with ID: " + record_id
+
+
+@app.delete("/teams/{team_id}", response_description="Remove a given set of game data by Team ID")
+async def remove_gameInfo_byId(team_id: str):
+    myQuery = {"$or":[{"HomeTeam":"LIZ"},{"AwayTeam":"LIZ"}]}
+    app.database['pbp-nba'].delete_many(myQuery)
+    return "Successfully deleted all records for team: " + team_id
