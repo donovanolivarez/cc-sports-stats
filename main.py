@@ -1,30 +1,44 @@
 #!/usr/bin/env python3
+from datetime import datetime
 from typing import List
 
 from models import NBAData
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pymongo import MongoClient
 
 app = FastAPI()
 
+
+@app.on_event("startup")
+def startup_db_client():
+    CONNECTION_STRING = "mongodb+srv://heyubaidullah:LroLDx3UdCyQO5fA@cc-sports-stat-cluster.ruyzwup.mongodb.net/?retryWrites=true&w=majority&appName=cc-sports-stat-cluster"
+    app.mongodb_client = MongoClient(CONNECTION_STRING)
+    app.database = app.mongodb_client['sports-stats']
+    app.database['pbp-nba']
+
+
+@app.on_event("shutdown")
+def shutdown_db_client():
+    app.mongodb_client.close()
+
+
 @app.get("/")
 def read_root():
-    client = get_database()
-    print(client)
-    return {"Hello": "World"}
+    print(app.database['pbp-nba'])
+    return "Welcome to the Sports Statistics app!"
 
-@app.get("/teams", response_description="List all NBA teams", response_model=List[NBAData])
+@app.get("/teams", response_description="List all NBA teams", response_model=List[str])
 def get_teams():
-    mycol = get_database()
-    teams = list(mycol.find().distinct("HomeTeam"))
+    teams = list(app.database['pbp-nba'].find().distinct("HomeTeam"))
+
     return teams
 
-@app.get("/teams/{team_id}", response_description="List all the games of the given team")
+@app.get("/teams/{team_id}", response_description="List all the games of the given team", response_model=str)
 def get_team_info(team_id: str):
     count = 0
-    mycol = get_database()
+    mycol = app.database['pbp-nba']
     myQuery = {"WinningTeam": team_id, "Quarter": 4, "SecLeft": 0, "AwayPlay":"End of Game"}
     results = mycol.find(myQuery)
     for doc1 in results:
@@ -35,35 +49,35 @@ def get_team_info(team_id: str):
     return myString
 
 
+# @app.post("/teams/{team_id}/gameInfo", response_description="Create a new entry for game data")
+# async def create_gameInfo(post: postingModel.Posting = Body(...)):
+#     post = jsonable_encoder(post)
+#     app.database['pbp-nba'].insert_one(nbadata_helper(post))
+#     return "Game info for " + post.WinningTeam + " was inserted."
+
 @app.post("/teams/{team_id}/gameInfo", response_description="Create a new entry for game data")
 async def create_gameInfo(gameInfo: NBAData):
-    return gameInfo
+    print(gameInfo)
+    json_compatible_item_data = jsonable_encoder(NBAData)
+    app.database['pbp-nba'].insert_one(gameInfo.model_dump())
+    return "Game info for " + gameInfo.WinningTeam + " was inserted."
+
 
 @app.delete("/{id}", response_description="Remove a given set of game data by ID")
 async def remove_gameInfo_byId(id: str):
-    mycol = get_database()
-    return mycol.delete_one(id)
+    return app.database['pbp-nba'].delete_one(id)
 
 
-def get_database(): 
-   # Provide the mongodb atlas url to connect python to mongodb using pymongo
-   #CONNECTION_STRING = "mongodb+srv://heyubaidullah:LroLDx3UdCyQO5fA@cc-sports-stat-cluster.ruyzwup.mongodb.net/?retryWrites=true&w=majority&appName=cc-sports-stat-cluster"
-   CONNECTION_STRING = "mongodb+srv://ep1085:HXExdlceJdiMIcem@cluster0.s1reytw.mongodb.net/"
-   # Create a connection using MongoClient. You can import MongoClient or use pymongo.MongoClient
-   client = MongoClient(CONNECTION_STRING)
-   db = client['cc-sports-stats-nba']
-   table = db['2019-2020']
- 
-   # Create the database for our example (we will use the same database throughout the tutorial
-   return table
-
-"""
-# Create a new client and connect to the server
-client = MongoClient(uri, server_api=ServerApi('1'))
-# Send a ping to confirm a successful connection
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
-"""
+def nbadata_helper(nbadata) -> dict:
+    return {
+        "GameType": str(NBAData["GameType"]),
+        "Location": str(NBAData["Location"]),
+        "Quarter": int(NBAData["Quarter"]),
+        "SecLeft": int(NBAData["SecLeft"]),
+        "Date": datetime(NBAData["Date"]),
+        "WinningTeam": str(NBAData["WinningTeam"]),
+        "HomeTeam": str(NBAData["HomeTeam"]),
+        "HomeScore": int(NBAData["HomeScore"]),
+        "AwayTeam": str(NBAData["AwayTeam"]),
+        "AwayScore": int(NBAData["AwayScore"])
+    }
