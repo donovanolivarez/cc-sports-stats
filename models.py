@@ -29,11 +29,11 @@ class PyObjectId(ObjectId):
 
 
 class NBAData(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     URL: Optional[str] = Field(default=None)
     GameType: Optional[str] = Field(default=None)
     Location: Optional[str] = Field(default=None)
-    Date: Optional[datetime] = Field(default=None)
+    Date: Optional[str] = Field(default=None)
     Time: Optional[str] = Field(default=None)
     WinningTeam: str = Field(default=None)
     Quarter: Optional[int] = Field(default=None)
