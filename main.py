@@ -42,7 +42,6 @@ def get_team_info(team_id: str):
     print(results)
     nba_data = [NBAData(**doc).model_dump() for doc in results]
 
-    print("The total number of games won by " + team_id + " was " + str(count))
     return nba_data
 
 
